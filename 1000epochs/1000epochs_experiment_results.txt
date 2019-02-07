@@ -1,0 +1,257 @@
+Hidden units: 2^6
+Frobenius1:	 60.1
+Frobenius2:	 22.7
+Distance1:	 60.3
+Distance2:	 22.7
+Spectral1:	 9.21
+Spectral2:	 11.7
+Fro_Fro:	 1.36e+03
+L1max_L1max:	 2.11e+04
+Spec_Dist:	 661
+Dist_Spec:	 5.65e+03
+Spec_Dist_sum:	 6.31e+03
+Spec_L1max:	 656
+L1max_Spec:	 5.64e+03
+Spec_L1max_sum:	 6.29e+03
+Dist_Fro:	 1.37e+03
+init_Fro:	 14.8
+Dist_Fro_sum:	 1.38e+03
+#parameter:	 1.97e+05
+VC bound:	 4.45e+08
+L1max bound:	 5.68e+11
+Fro bound:	 2.59e+11
+Spec_L1 bound:	 5.31e+18
+Spec_Fro bound:	 9.81e+17
+Our bound:	 2.4e+11
+
+Hidden units: 2^7
+Frobenius1:	 34.1
+Frobenius2:	 22.5
+Distance1:	 34.7
+Distance2:	 22.6
+Spectral1:	 4.7
+Spectral2:	 9.39
+Fro_Fro:	 768
+L1max_L1max:	 1.19e+04
+Spec_Dist:	 336
+Dist_Spec:	 3.69e+03
+Spec_Dist_sum:	 4.02e+03
+Spec_L1max:	 335
+L1max_Spec:	 3.68e+03
+Spec_L1max_sum:	 4.01e+03
+Dist_Fro:	 782
+init_Fro:	 15.5
+Dist_Fro_sum:	 797
+#parameter:	 3.95e+05
+VC bound:	 9.5e+08
+L1max bound:	 9.37e+10
+Fro bound:	 4.24e+10
+Spec_L1 bound:	 1.18e+18
+Spec_Fro bound:	 6.18e+16
+Our bound:	 4.06e+10
+
+Hidden units: 2^8
+Frobenius1:	 27.9
+Frobenius2:	 21.1
+Distance1:	 29.4
+Distance2:	 21.2
+Spectral1:	 3.46
+Spectral2:	 7.91
+Fro_Fro:	 590
+L1max_L1max:	 9.19e+03
+Spec_Dist:	 232
+Dist_Spec:	 3.72e+03
+Spec_Dist_sum:	 3.95e+03
+Spec_L1max:	 231
+L1max_Spec:	 3.71e+03
+Spec_L1max_sum:	 3.94e+03
+Dist_Fro:	 621
+init_Fro:	 15.6
+Dist_Fro_sum:	 637
+#parameter:	 7.89e+05
+VC bound:	 2.03e+09
+L1max bound:	 4.72e+10
+Fro bound:	 2.13e+10
+Spec_L1 bound:	 1.01e+18
+Spec_Fro bound:	 3.18e+16
+Our bound:	 2.2e+10
+
+Hidden units: 2^9
+Frobenius1:	 27.1
+Frobenius2:	 20.2
+Distance1:	 30.1
+Distance2:	 20.3
+Spectral1:	 3.08
+Spectral2:	 7.57
+Fro_Fro:	 548
+L1max_L1max:	 9.18e+03
+Spec_Dist:	 198
+Dist_Spec:	 5.16e+03
+Spec_Dist_sum:	 5.36e+03
+Spec_L1max:	 197
+L1max_Spec:	 5.14e+03
+Spec_L1max_sum:	 5.34e+03
+Dist_Fro:	 608
+init_Fro:	 16.4
+Dist_Fro_sum:	 625
+#parameter:	 1.58e+06
+VC bound:	 4.32e+09
+L1max bound:	 4.28e+10
+Fro bound:	 1.67e+10
+Spec_L1 bound:	 1.73e+18
+Spec_Fro bound:	 4.81e+16
+Our bound:	 1.94e+10
+
+Hidden units: 2^10
+Frobenius1:	 29.2
+Frobenius2:	 19.8
+Distance1:	 34.5
+Distance2:	 19.8
+Spectral1:	 2.84
+Spectral2:	 7.43
+Fro_Fro:	 577
+L1max_L1max:	 9.59e+03
+Spec_Dist:	 178
+Dist_Spec:	 8.21e+03
+Spec_Dist_sum:	 8.39e+03
+Spec_L1max:	 178
+L1max_Spec:	 8.19e+03
+Spec_L1max_sum:	 8.37e+03
+Dist_Fro:	 683
+init_Fro:	 17.9
+Dist_Fro_sum:	 701
+#parameter:	 3.16e+06
+VC bound:	 9.19e+09
+L1max bound:	 4.42e+10
+Fro bound:	 1.75e+10
+Spec_L1 bound:	 4.11e+18
+Spec_Fro bound:	 1.06e+17
+Our bound:	 2.32e+10
+
+Hidden units: 2^11
+Frobenius1:	 34.1
+Frobenius2:	 19.6
+Distance1:	 43
+Distance2:	 19.7
+Spectral1:	 2.73
+Spectral2:	 7.4
+Fro_Fro:	 668
+L1max_L1max:	 1.11e+04
+Spec_Dist:	 170
+Dist_Spec:	 1.44e+04
+Spec_Dist_sum:	 1.46e+04
+Spec_L1max:	 169
+L1max_Spec:	 1.44e+04
+Spec_L1max_sum:	 1.45e+04
+Dist_Fro:	 842
+init_Fro:	 20.5
+Dist_Fro_sum:	 862
+#parameter:	 6.31e+06
+VC bound:	 1.95e+10
+L1max bound:	 5.72e+10
+Fro bound:	 2.27e+10
+Spec_L1 bound:	 1.24e+19
+Spec_Fro bound:	 3.14e+17
+Our bound:	 3.42e+10
+
+Hidden units: 2^12
+Frobenius1:	 42.7
+Frobenius2:	 19.5
+Distance1:	 56.5
+Distance2:	 19.6
+Spectral1:	 2.67
+Spectral2:	 7.38
+Fro_Fro:	 832
+L1max_L1max:	 1.35e+04
+Spec_Dist:	 165
+Dist_Spec:	 2.67e+04
+Spec_Dist_sum:	 2.69e+04
+Spec_L1max:	 164
+L1max_Spec:	 2.67e+04
+Spec_L1max_sum:	 2.68e+04
+Dist_Fro:	 1.1e+03
+init_Fro:	 24.1
+Dist_Fro_sum:	 1.12e+03
+#parameter:	 1.26e+07
+VC bound:	 4.11e+10
+L1max bound:	 8.26e+10
+Fro bound:	 3.46e+10
+Spec_L1 bound:	 4.33e+19
+Spec_Fro bound:	 1.08e+18
+Our bound:	 5.74e+10
+
+Hidden units: 2^13
+Frobenius1:	 56.3
+Frobenius2:	 19.4
+Distance1:	 76.8
+Distance2:	 19.5
+Spectral1:	 2.67
+Spectral2:	 7.37
+Fro_Fro:	 1.09e+03
+L1max_L1max:	 1.78e+04
+Spec_Dist:	 164
+Dist_Spec:	 5.12e+04
+Spec_Dist_sum:	 5.14e+04
+Spec_L1max:	 164
+L1max_Spec:	 5.12e+04
+Spec_L1max_sum:	 5.14e+04
+Dist_Fro:	 1.49e+03
+init_Fro:	 29.5
+Dist_Fro_sum:	 1.52e+03
+#parameter:	 2.53e+07
+VC bound:	 8.67e+10
+L1max bound:	 1.43e+11
+Fro bound:	 5.85e+10
+Spec_L1 bound:	 1.64e+20
+Spec_Fro bound:	 4.19e+18
+Our bound:	 1.04e+11
+Hidden units: 2^14
+Frobenius1:	 76.6
+Frobenius2:	 19.1
+Distance1:	 106
+Distance2:	 19.2
+Spectral1:	 2.77
+Spectral2:	 7.3
+Fro_Fro:	 1.47e+03
+L1max_L1max:	 2.19e+04
+Spec_Dist:	 168
+Dist_Spec:	 9.95e+04
+Spec_Dist_sum:	 9.96e+04
+Spec_L1max:	 168
+L1max_Spec:	 9.95e+04
+Spec_L1max_sum:	 9.96e+04
+Dist_Fro:	 2.04e+03
+init_Fro:	 36.5
+Dist_Fro_sum:	 2.07e+03
+#parameter:	 5.05e+07
+VC bound:	 1.82e+11
+L1max bound:	 2.12e+11
+Fro bound:	 1.04e+11
+Spec_L1 bound:	 6.43e+20
+Spec_Fro bound:	 1.77e+19
+Our bound:	 1.91e+11
+Hidden units: 2^15
+Frobenius1:	 106
+Frobenius2:	 18.7
+Distance1:	 149
+Distance2:	 18.8
+Spectral1:	 3.04
+Spectral2:	 7.16
+Fro_Fro:	 1.99e+03
+L1max_L1max:	 2.9e+04
+Spec_Dist:	 181
+Dist_Spec:	 1.93e+05
+Spec_Dist_sum:	 1.93e+05
+Spec_L1max:	 180
+L1max_Spec:	 1.93e+05
+Spec_L1max_sum:	 1.93e+05
+Dist_Fro:	 2.79e+03
+init_Fro:	 46.1
+Dist_Fro_sum:	 2.84e+03
+#parameter:	 1.01e+08
+VC bound:	 3.82e+11
+L1max bound:	 3.64e+11
+Fro bound:	 1.88e+11
+Spec_L1 bound:	 2.53e+21
+Spec_Fro bound:	 8.41e+19
+Our bound:	 3.53e+11

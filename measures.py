@@ -1,5 +1,6 @@
 import torch
 import math
+import collections
 
 # This function calculates various measures on the given model and returns a dictionary whose keys are the measure names
 # and values are the corresponding measures on the model
@@ -47,7 +48,7 @@ def calculate(model, init_model, device, train_loader, margin):
         # L_{2,1} distance of the weight matrix in the second layer to the initial weight matrix
         L1Dist2 = diff2.norm(p=2, dim=1 ).sum()
 
-        measure = {}
+        measure = collections.OrderedDict()
         measure['Frobenius1'] = Fro1
         measure['Frobenius2'] = Fro2
         measure['Distance1'] = Dist1

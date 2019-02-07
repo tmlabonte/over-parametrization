@@ -1,14 +1,18 @@
-import numpy as np
 import torch
+import os
+import glob
+import numpy as np
 from torch import nn, optim
 from torch.utils.data import DataLoader
 import copy
+import pathlib
 import argparse
 import measures
+import collections
 from torchvision import transforms, datasets
 
 # train the model for one epoch on the given set
-def train(args, model, device, train_loader, criterion, optimizer, epoch):
+def train(model, device, train_loader, criterion, optimizer, epoch):
     sum_loss, sum_correct = 0, 0
 
     # switch to train mode
@@ -34,7 +38,7 @@ def train(args, model, device, train_loader, criterion, optimizer, epoch):
 
 
 # evaluate the model on the given set
-def validate(args, model, device, val_loader, criterion):
+def validate(model, device, val_loader, criterion):
     sum_loss, sum_correct = 0, 0
     margin = torch.Tensor([]).to(device)
 
@@ -89,11 +93,85 @@ def load_data(split, dataset_name, datadir, nchannels):
 
     return dataset
 
+# This function trains a fully connected neural net with a single hidden layer on the given dataset and calculates
+# various measures on the learned network
+def main(args):
+    use_cuda = not args["no_cuda"] and torch.cuda.is_available()
+    device = torch.device("cuda" if use_cuda else "cpu")
+    kwargs = {'num_workers': 1, 'pin_memory': True} if use_cuda else {}
+    nchannels, nclasses = 3, 10
+    if args["dataset"] == 'MNIST': nchannels = 1
+    if args["dataset"] == 'CIFAR100': nclasses = 100
 
-# This function trains a fully connected neural net with a singler hidden layer on the given dataset and calculates
-# various measures on the learned network.
-def main():
+    # create an initial model
+    model = nn.Sequential(nn.Linear(32 * 32 * nchannels, args["nunits"]), nn.ReLU(), nn.Linear(args["nunits"], nclasses))
+    model = model.to(device)
 
+    # create a copy of the initial model to be used later
+    init_model = copy.deepcopy(model)
+
+    # define loss function (criterion) and optimizer
+    criterion = nn.CrossEntropyLoss().to(device)
+    optimizer = optim.SGD(model.parameters(), args["learningrate"], momentum=args["momentum"], weight_decay=args["weightdecay"])
+
+    # loading data
+    train_dataset = load_data('train', args["dataset"], args["datadir"], nchannels)
+    val_dataset = load_data('val', args["dataset"], args["datadir"], nchannels)
+
+    train_loader = DataLoader(train_dataset, batch_size=args["batchsize"], shuffle=True, **kwargs)
+    val_loader = DataLoader(val_dataset, batch_size=args["batchsize"], shuffle=False, **kwargs)
+   
+    start_epoch = 0
+
+    path = "saved_models/" + args["dataset"] + "/N" + str(args["nunits"])
+    if os.path.isdir(path):
+        # find latest directory
+        latest_dir = max(glob.glob(os.path.join(path, '*/')), key=os.path.getmtime)
+        latest_checkpoint = latest_dir + "checkpoint.pth.tar"
+
+        checkpoint = torch.load(latest_checkpoint)
+        start_epoch = checkpoint['epoch']
+        optimizer.load_state_dict(checkpoint['optimizer'])
+        model.load_state_dict(checkpoint['state_dict'])
+        print("Loading checkpoint")
+
+    # training the model
+    for epoch in range(start_epoch, args["epochs"]):
+        # train for one epoch
+        tr_err, tr_loss = train(model, device, train_loader, criterion, optimizer, epoch)
+
+        val_err, val_loss, val_margin = validate(model, device, val_loader, criterion)
+
+        print('Epoch: ' + str(epoch + 1) + "/" + str(args["epochs"]) + '\t Training loss: ' + str(round(tr_loss,3)) + '\t', 'Training error: ' + str(round(tr_err,3)) + '\t Validation error: ' + str(round(val_err,3)))
+
+        if (epoch + 1) % 50 == 0 and epoch > 0:
+            path = "./saved_models/" + args["dataset"] + "/N" + str(args["nunits"]) + "/E" + str(epoch + 1)
+            pathlib.Path(path).mkdir(parents=True, exist_ok=True)
+            torch.save({
+                "state_dict": model.state_dict(),
+                "optimizer": optimizer.state_dict(),
+                "epoch": (epoch + 1)
+                }, path + "/checkpoint.pth.tar") 
+
+        # stop training if the cross-entropy loss is less than the stopping condition
+        if tr_loss < args["stopcond"]: break
+
+    # calculate the training error and margin of the learned model
+    tr_err, tr_loss, tr_margin = validate(model, device, train_loader, criterion)
+    print('\nFinal: Training loss: ' + str(round(tr_loss,3)) + '\t Training margin: ' + str(round(tr_margin,3)) + '\t Training error: ' + str(round(tr_err,3)) + '\t Validation error: ' + str(round(val_err,3)) + '\n')
+
+    path = "./saved_models/" + args["dataset"] + "/N" + str(args["nunits"]) + "/E" + str(epoch + 1)
+    pathlib.Path(path).mkdir(parents=True, exist_ok=True)
+    torch.save({
+                "state_dict": model.state_dict(),
+                "optimizer": optimizer.state_dict(),
+                "epoch": (epoch + 1)
+                }, path + "/checkpoint.pth.tar") 
+
+    measure = measures.calculate(model, init_model, device, train_loader, tr_margin)
+    return measure
+
+if __name__ == '__main__':
     # settings
     parser = argparse.ArgumentParser(description='Training a fully connected NN with one hidden layer')
     parser.add_argument('--no-cuda', default=False, action='store_true',
@@ -114,55 +192,8 @@ def main():
                         help='learning rate (default: 0.001)')
     parser.add_argument('--momentum', default=0.9, type=float,
                         help='momentum (default: 0.9)')
-    args = parser.parse_args()
+    parser.add_argument('--weightdecay', default=0, type=float,
+                        help='weight decay (default: 0)')
+    args, unparsed = parser.parse_known_args()
+    main(vars(args))
 
-    use_cuda = not args.no_cuda and torch.cuda.is_available()
-    device = torch.device("cuda" if use_cuda else "cpu")
-    kwargs = {'num_workers': 1, 'pin_memory': True} if use_cuda else {}
-    nchannels, nclasses = 3, 10
-    if args.dataset == 'MNIST': nchannels = 1
-    if args.dataset == 'CIFAR100': nclasses = 100
-
-    # create an initial model
-    model = nn.Sequential(nn.Linear(32 * 32 * nchannels, args.nunits), nn.ReLU(), nn.Linear(args.nunits, nclasses))
-    model = model.to(device)
-
-    # create a copy of the initial model to be used later
-    init_model = copy.deepcopy(model)
-
-    # define loss function (criterion) and optimizer
-    criterion = nn.CrossEntropyLoss().to(device)
-    optimizer = optim.SGD(model.parameters(), args.learningrate, momentum=args.momentum)
-
-    # loading data
-    train_dataset = load_data('train', args.dataset, args.datadir, nchannels)
-    val_dataset = load_data('val', args.dataset, args.datadir, nchannels)
-
-    train_loader = DataLoader(train_dataset, batch_size=args.batchsize, shuffle=True, **kwargs)
-    val_loader = DataLoader(val_dataset, batch_size=args.batchsize, shuffle=False, **kwargs)
-
-    # training the model
-    for epoch in range(0, args.epochs):
-        # train for one epoch
-        tr_err, tr_loss = train(args, model, device, train_loader, criterion, optimizer, epoch)
-
-        val_err, val_loss, val_margin = validate(args, model, device, val_loader, criterion)
-
-        print(f'Epoch: {epoch + 1}/{args.epochs}\t Training loss: {tr_loss:.3f}\t',
-                f'Training error: {tr_err:.3f}\t Validation error: {val_err:.3f}')
-
-        # stop training if the cross-entropy loss is less than the stopping condition
-        if tr_loss < args.stopcond: break
-
-    # calculate the training error and margin of the learned model
-    tr_err, tr_loss, tr_margin = validate(args, model, device, train_loader, criterion)
-    print(f'\nFinal: Training loss: {tr_loss:.3f}\t Training margin {tr_margin:.3f}\t ',
-            f'Training error: {tr_err:.3f}\t Validation error: {val_err:.3f}\n')
-
-    measure = measures.calculate(model, init_model, device, train_loader, tr_margin)
-    for key, value in measure.items():
-        print(f'{key:s}:\t {float(value):3.3}')
-
-
-if __name__ == '__main__':
-    main()
