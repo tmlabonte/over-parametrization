@@ -123,7 +123,7 @@ def main(args):
    
     start_epoch = 0
 
-    path = "saved_models/" + args["dataset"] + "/N" + str(args["nunits"])
+    path = "saved_models/" + args["dataset"] + "/WD" + str(args["weightdecay"]) + "/N" + str(args["nunits"])
     if os.path.isdir(path):
         # find latest directory
         latest_dir = max(glob.glob(os.path.join(path, '*/')), key=os.path.getmtime)
@@ -131,6 +131,7 @@ def main(args):
 
         checkpoint = torch.load(latest_checkpoint)
         start_epoch = checkpoint['epoch']
+        epoch = start_epoch
         optimizer.load_state_dict(checkpoint['optimizer'])
         model.load_state_dict(checkpoint['state_dict'])
         print("Loading checkpoint")
@@ -145,7 +146,7 @@ def main(args):
         print('Epoch: ' + str(epoch + 1) + "/" + str(args["epochs"]) + '\t Training loss: ' + str(round(tr_loss,3)) + '\t', 'Training error: ' + str(round(tr_err,3)) + '\t Validation error: ' + str(round(val_err,3)))
 
         if (epoch + 1) % 50 == 0 and epoch > 0:
-            path = "./saved_models/" + args["dataset"] + "/N" + str(args["nunits"]) + "/E" + str(epoch + 1)
+            path = "./saved_models/" + args["dataset"] + "/WD" + str(args["weightdecay"]) + "/N" + str(args["nunits"]) + "/E" + str(epoch + 1)
             pathlib.Path(path).mkdir(parents=True, exist_ok=True)
             torch.save({
                 "state_dict": model.state_dict(),
@@ -158,9 +159,10 @@ def main(args):
 
     # calculate the training error and margin of the learned model
     tr_err, tr_loss, tr_margin = validate(model, device, train_loader, criterion)
+    val_err, val_loss, val_margin = validate(model, device, val_loader, criterion)
     print('\nFinal: Training loss: ' + str(round(tr_loss,3)) + '\t Training margin: ' + str(round(tr_margin,3)) + '\t Training error: ' + str(round(tr_err,3)) + '\t Validation error: ' + str(round(val_err,3)) + '\n')
 
-    path = "./saved_models/" + args["dataset"] + "/N" + str(args["nunits"]) + "/E" + str(epoch + 1)
+    path = "./saved_models/" + args["dataset"] + "/WD" + str(args["weightdecay"]) + "/N" + str(args["nunits"]) + "/E" + str(epoch + 1)
     pathlib.Path(path).mkdir(parents=True, exist_ok=True)
     torch.save({
                 "state_dict": model.state_dict(),

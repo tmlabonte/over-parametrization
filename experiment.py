@@ -4,7 +4,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 # Learning rate is 0.01 for MNIST and 0.001 for CIFAR10
-args = {'stopcond': 0, 'dataset': 'CIFAR10', 'learningrate': 0.001, 'nunits': 1024, 'batchsize': 64, 'momentum': 0.9, 'no_cuda': False, 'weightdecay': 0, 'epochs': 400, 'datadir': '/hdd/datasets'}
+args = {'stopcond': 0, 'dataset': 'CIFAR10', 'learningrate': 0.001, 'nunits': 1024, 'batchsize': 64, 'momentum': 0.9, 'no_cuda': False, 'weightdecay': 0.001, 'epochs': 1000, 'datadir': '/hdd/datasets'}
 
 # vc, l1max, fro, spec_l1, spec_fro, our 
 bounds_vals = [[], [], [], [], [], []]
@@ -16,7 +16,7 @@ for n in range(6, 16):
     measure = main(args)
     bounds = list(measure.items())[-6:]
     
-    with open("experiment_results.txt", "a") as f:
+    with open("experiment_results_wd.txt", "a") as f:
         f.write("Hidden units: 2^" + str(n) + "\n")
         for key, value in measure.items():
             val = float(value)
@@ -40,7 +40,7 @@ plt.yscale("log")
 plt.xticks([pow(2,6), pow(2,9), pow(2,12), pow(2,15)])
 plt.title("CIFAR-10")
 plt.legend()
-plt.savefig("capacity.png")
+plt.savefig("capacity_wd.png")
 
 plt.clf()
 
@@ -61,4 +61,4 @@ plt.xscale("log", basex=2)
 plt.xticks([pow(2,6), pow(2,9), pow(2,12), pow(2,15)])
 plt.title("CIFAR-10")
 plt.legend()
-plt.savefig("normalized_capacity.png")
+plt.savefig("normalized_capacity_wd.png")
