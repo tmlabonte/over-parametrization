@@ -9,6 +9,7 @@ import pathlib
 import argparse
 import measures
 import collections
+import math
 from torchvision import transforms, datasets
 
 # train the model for one epoch on the given set
@@ -95,7 +96,7 @@ def load_data(split, dataset_name, datadir, nchannels):
 
 # This function trains a fully connected neural net with a single hidden layer on the given dataset and calculates
 # various measures on the learned network
-def main(args):
+def train_model(args):
     use_cuda = not args["no_cuda"] and torch.cuda.is_available()
     device = torch.device("cuda" if use_cuda else "cpu")
     kwargs = {'num_workers': 1, 'pin_memory': True} if use_cuda else {}
@@ -123,18 +124,24 @@ def main(args):
    
     start_epoch = 0
 
-    path = "saved_models/" + args["dataset"] + "/WD" + str(args["weightdecay"]) + "/N" + str(args["nunits"])
+    path = "saved_models/" + args["dataset"] + "/WD" + str(args["weightdecay"]) + "/N" + str(int(math.log(args["nunits"], 2)))
     if os.path.isdir(path):
-        # find latest directory
-        latest_dir = max(glob.glob(os.path.join(path, '*/')), key=os.path.getmtime)
-        latest_checkpoint = latest_dir + "checkpoint.pth.tar"
+        # If exact epochs dir exists, select it
+        # Else find latest directory
+        epoch_path = path + "/E" + str(args["epochs"])
+        if os.path.isdir(epoch_path):
+            latest_checkpoint = epoch_path + "/checkpoint.pth.tar"
+        else:
+            latest_dir = max(glob.glob(os.path.join(path, '*/')), key=os.path.getmtime)
+            latest_checkpoint = latest_dir + "/checkpoint.pth.tar"
 
         checkpoint = torch.load(latest_checkpoint)
         start_epoch = checkpoint['epoch']
         epoch = start_epoch
         optimizer.load_state_dict(checkpoint['optimizer'])
         model.load_state_dict(checkpoint['state_dict'])
-        print("Loading checkpoint")
+        init_model.load_state_dict(checkpoint['init'])
+        print("Loading checkpoint for model: " + str(int(math.log(args['nunits'], 2))) + " epoch " + str(epoch))
 
     # training the model
     for epoch in range(start_epoch, args["epochs"]):
@@ -146,10 +153,11 @@ def main(args):
         print('Epoch: ' + str(epoch + 1) + "/" + str(args["epochs"]) + '\t Training loss: ' + str(round(tr_loss,3)) + '\t', 'Training error: ' + str(round(tr_err,3)) + '\t Validation error: ' + str(round(val_err,3)))
 
         if (epoch + 1) % 50 == 0 and epoch > 0:
-            path = "./saved_models/" + args["dataset"] + "/WD" + str(args["weightdecay"]) + "/N" + str(args["nunits"]) + "/E" + str(epoch + 1)
+            path = "./saved_models/" + args["dataset"] + "/WD" + str(args["weightdecay"]) + "/N" + str(int(math.log(args["nunits"], 2))) + "/E" + str(epoch + 1)
             pathlib.Path(path).mkdir(parents=True, exist_ok=True)
             torch.save({
                 "state_dict": model.state_dict(),
+                "init": init_model.state_dict(),
                 "optimizer": optimizer.state_dict(),
                 "epoch": (epoch + 1)
                 }, path + "/checkpoint.pth.tar") 
@@ -157,18 +165,9 @@ def main(args):
         # stop training if the cross-entropy loss is less than the stopping condition
         if tr_loss < args["stopcond"]: break
 
-    # calculate the training error and margin of the learned model
     tr_err, tr_loss, tr_margin = validate(model, device, train_loader, criterion)
     val_err, val_loss, val_margin = validate(model, device, val_loader, criterion)
     print('\nFinal: Training loss: ' + str(round(tr_loss,3)) + '\t Training margin: ' + str(round(tr_margin,3)) + '\t Training error: ' + str(round(tr_err,3)) + '\t Validation error: ' + str(round(val_err,3)) + '\n')
-
-    path = "./saved_models/" + args["dataset"] + "/WD" + str(args["weightdecay"]) + "/N" + str(args["nunits"]) + "/E" + str(epoch + 1)
-    pathlib.Path(path).mkdir(parents=True, exist_ok=True)
-    torch.save({
-                "state_dict": model.state_dict(),
-                "optimizer": optimizer.state_dict(),
-                "epoch": (epoch + 1)
-                }, path + "/checkpoint.pth.tar") 
 
     measure = measures.calculate(model, init_model, device, train_loader, tr_margin)
     return measure
@@ -197,5 +196,5 @@ if __name__ == '__main__':
     parser.add_argument('--weightdecay', default=0, type=float,
                         help='weight decay (default: 0)')
     args, unparsed = parser.parse_known_args()
-    main(vars(args))
+    train_model(vars(args))
 

@@ -35,3 +35,9 @@
 .Trashes
 ehthumbs.db
 Thumbs.db
+
+*.png
+*.txt
+__pycache__
+graphs_OLD
+*.pyc
