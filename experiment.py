@@ -11,7 +11,7 @@ def main(args):
     bounds_vals = [[], [], [], [], [], []]
     hidden_units = np.array([pow(2, n) for n in range(6, 16)])
 
-    for n in range(14, 15):
+    for n in range(6, 16):
         train_args["nunits"] = pow(2, n)
 
         measure = train_model(train_args)

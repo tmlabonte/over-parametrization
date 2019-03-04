@@ -10,7 +10,7 @@ import measures
 device = torch.device("cuda")
 nchannels, nclasses = 3, 10
 kwargs = {'num_workers': 1, 'pin_memory': True}
-epochs = np.array([i for i in range(50, 1050, 50)])
+epochs = np.array([i for i in range(50, 550, 50)])
 bounds = [[] for i in range(0, 6)]
 
 criterion = nn.CrossEntropyLoss().to(device)
@@ -29,7 +29,7 @@ for epoch in epochs:
     init_model = copy.deepcopy(model)
     optimizer = optim.SGD(model.parameters(), 0.001, momentum=0.9, weight_decay=0.001)
 
-    checkpoint_path = "saved_models/CIFAR10/WD0.001/N14/E" + str(epoch) + "/checkpoint.pth.tar"
+    checkpoint_path = "saved_models/CIFAR10/WD0.0025/N14/E" + str(epoch) + "/checkpoint.pth.tar"
 
     print("Loading checkpoint for model: 2^14 at epoch " + str(epoch))
 
@@ -54,8 +54,8 @@ plt.plot(epochs, np.array(bounds[4]), marker="+", label="(5) spec-Fro", color="b
 plt.plot(epochs, np.array(bounds[5]), marker="+", label="(6) ours", color="red")
 plt.xlabel("Epoch #")
 plt.ylabel("Capacity")
-plt.xticks([i for i in range(0, 1100, 100)])
+plt.xticks([i for i in range(0, 600, 100)])
 plt.yscale("log")
-plt.title("CIFAR10 - HU: 2^14 WD: 0.001")
+plt.title("CIFAR10 - HU: 2^14 WD: 0.0025")
 plt.legend()
-plt.savefig("epoch_vs_bound_HU214_WD0001.png")
+plt.savefig("epoch_vs_bound_HU214_WD00025.png")
