@@ -39,7 +39,7 @@ def main(args):
     plt.xscale("log", basex=2)
     plt.yscale("log")
     plt.xticks([pow(2, n) for n in range(6, 16, 3)])
-    plt.title("CIFAR10 - Epochs: " + str(args["epochs"]) + " WD: " + str(args["weightdecay"]))
+    plt.title("CIFAR10 - Epochs: " + str(args["epochs"]) + " InitReg: " + str(args["init_reg_strength"]))
     plt.legend()
     plt.savefig(args["name"] + ".png")
 
@@ -49,8 +49,8 @@ if __name__ == "__main__":
                         help="weight decay (default: 0)")
     parser.add_argument('--init_reg_strength', default=0, type=float,
                         help='initialization regularization strength (default: 0)')
-    parser.add_argument("--epochs", default=1000, type=int,
-                        help="number of epochs to train (default: 1000)")
+    parser.add_argument("--epochs", default=500, type=int,
+                        help="number of epochs to train (default: 500)")
     parser.add_argument("--name", default="capacity", type=str,
                         help="name of saved .png file (default: capacity)")
     args, unparsed = parser.parse_known_args()

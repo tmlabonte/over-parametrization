@@ -14,13 +14,14 @@ from torchvision import transforms, datasets
 
 # define cross entropy loss with optional weight intialization regularization
 def cross_entropy_loss(model, init_model, output, target, strength):
-    loss = nn.CrossEntropyLoss(output, target)
+    criterion = nn.CrossEntropyLoss()
+    loss = criterion(output, target)
     for w, w0 in zip(model.parameters(), init_model.parameters()):
-        loss += strength * torch.pow(torch.abs(w - w0), 2)
+        loss += strength * torch.pow(torch.norm(torch.abs(w - w0)), 2)
     return loss
 
 # train the model for one epoch on the given set
-def train(model, init_model, device, train_loader, optimizer):
+def train(model, init_model, device, train_loader, optimizer, ir_strength):
     sum_loss, sum_correct = 0, 0
 
     # switch to train mode
@@ -33,7 +34,7 @@ def train(model, init_model, device, train_loader, optimizer):
         output = model(data)
 
         # compute the classification error and loss
-        loss = cross_entropy_loss(model, init_model, output, target, FLAGS.init_reg_strength)
+        loss = cross_entropy_loss(model, init_model, output, target, ir_strength)
         pred = output.max(1)[1]
         sum_correct += pred.eq(target).sum().item()
         sum_loss += len(data) * loss.item()
@@ -46,7 +47,7 @@ def train(model, init_model, device, train_loader, optimizer):
 
 
 # evaluate the model on the given set
-def validate(model, init_model, device, val_loader):
+def validate(model, init_model, device, val_loader, ir_strength):
     sum_loss, sum_correct = 0, 0
     margin = torch.Tensor([]).to(device)
 
@@ -62,7 +63,7 @@ def validate(model, init_model, device, val_loader):
             # compute the classification error and loss
             pred = output.max(1)[1]
             sum_correct += pred.eq(target).sum().item()
-            sum_loss += len(data) * cross_entropy_loss(model, init_model, output, target, FLAGS.init_reg_strength)
+            sum_loss += len(data) * cross_entropy_loss(model, init_model, output, target, ir_strength)
 
             # compute the margin
             output_m = output.clone()
@@ -111,6 +112,8 @@ def train_model(args):
     if args["dataset"] == 'MNIST': nchannels = 1
     if args["dataset"] == 'CIFAR100': nclasses = 100
 
+    ir_strength = args["init_reg_strength"]
+
     # create an initial model
     model = nn.Sequential(nn.Linear(32 * 32 * nchannels, args["nunits"]), nn.ReLU(), nn.Linear(args["nunits"], nclasses))
     model = model.to(device)
@@ -130,7 +133,7 @@ def train_model(args):
    
     start_epoch = 0
 
-    path = "saved_models/" + args["dataset"] + "/WD" + str(args["weightdecay"]) + "/N" + str(int(math.log(args["nunits"], 2)))
+    path = "saved_models/" + args["dataset"] + "/IR" + str(ir_strength) + "/N" + str(int(math.log(args["nunits"], 2)))
     if os.path.isdir(path):
         # If exact epochs dir exists, select it
         # Else find latest directory
@@ -152,9 +155,9 @@ def train_model(args):
     # training the model
     for epoch in range(start_epoch, args["epochs"]):
         # train for one epoch
-        tr_err, tr_loss = train(model, init_model, device, train_loader, optimizer)
+        tr_err, tr_loss = train(model, init_model, device, train_loader, optimizer, ir_strength)
 
-        val_err, val_loss, val_margin = validate(model, init_model, device, val_loader)
+        val_err, val_loss, val_margin = validate(model, init_model, device, val_loader, ir_strength)
 
         print('Epoch: ' + str(epoch + 1) + "/" + str(args["epochs"]) + '\t Training loss: ' + str(round(tr_loss,3)) + '\t', 'Training error: ' + str(round(tr_err,3)) + '\t Validation error: ' + str(round(val_err,3)))
 
@@ -172,8 +175,8 @@ def train_model(args):
         if tr_loss < args["stopcond"]:
             break
 
-    tr_err, tr_loss, tr_margin = validate(model, init_model, device, train_loader)
-    val_err, val_loss, val_margin = validate(model, init_model, device, val_loader)
+    tr_err, tr_loss, tr_margin = validate(model, init_model, device, train_loader, ir_strength)
+    val_err, val_loss, val_margin = validate(model, init_model, device, val_loader, ir_strength)
     print('\nFinal: Training loss: ' + str(round(tr_loss,3)) + '\t Training margin: ' + str(round(tr_margin,3)) + '\t Training error: ' + str(round(tr_err,3)) + '\t Validation error: ' + str(round(val_err,3)) + '\n')
 
     measure = measures.calculate(model, init_model, device, train_loader, tr_margin)
