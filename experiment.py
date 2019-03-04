@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 
 def main(args):
     # Learning rate is 0.01 for MNIST and 0.001 for CIFAR10
-    train_args = {'stopcond': 0, 'dataset': 'CIFAR10', 'learningrate': 0.001, 'nunits': 1024, 'batchsize': 64, 'momentum': 0.9, 'no_cuda': False, 'weightdecay': args["weightdecay"], 'epochs': args["epochs"], 'datadir': '/hdd/datasets'}
+    train_args = {'stopcond': 0, 'dataset': 'CIFAR10', 'learningrate': 0.001, 'nunits': 1024, 'batchsize': 64, 'momentum': 0.9, 'no_cuda': False, 'weightdecay': args["weightdecay"], 'init_reg_strength': args["init_reg_strength"], 'epochs': args["epochs"], 'datadir': '/hdd/datasets'}
 
     # vc, l1max, fro, spec_l1, spec_fro, our 
     bounds_vals = [[], [], [], [], [], []]
@@ -47,6 +47,8 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--weightdecay", default=0, type=float,
                         help="weight decay (default: 0)")
+    parser.add_argument('--init_reg_strength', default=0, type=float,
+                        help='initialization regularization strength (default: 0)')
     parser.add_argument("--epochs", default=1000, type=int,
                         help="number of epochs to train (default: 1000)")
     parser.add_argument("--name", default="capacity", type=str,

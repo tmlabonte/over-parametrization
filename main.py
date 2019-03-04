@@ -12,21 +12,28 @@ import collections
 import math
 from torchvision import transforms, datasets
 
+# define cross entropy loss with optional weight intialization regularization
+def cross_entropy_loss(model, init_model, output, target, strength):
+    loss = nn.CrossEntropyLoss(output, target)
+    for w, w0 in zip(model.parameters(), init_model.parameters()):
+        loss += strength * torch.pow(torch.abs(w - w0), 2)
+    return loss
+
 # train the model for one epoch on the given set
-def train(model, device, train_loader, criterion, optimizer, epoch):
+def train(model, init_model, device, train_loader, optimizer):
     sum_loss, sum_correct = 0, 0
 
     # switch to train mode
     model.train()
 
     for i, (data, target) in enumerate(train_loader):
-        data, target = data.to(device).view(data.size(0),-1), target.to(device)
+        data, target = data.to(device).view(data.size(0), -1), target.to(device)
 
         # compute the output
         output = model(data)
 
         # compute the classification error and loss
-        loss = criterion(output, target)
+        loss = cross_entropy_loss(model, init_model, output, target, FLAGS.init_reg_strength)
         pred = output.max(1)[1]
         sum_correct += pred.eq(target).sum().item()
         sum_loss += len(data) * loss.item()
@@ -39,7 +46,7 @@ def train(model, device, train_loader, criterion, optimizer, epoch):
 
 
 # evaluate the model on the given set
-def validate(model, device, val_loader, criterion):
+def validate(model, init_model, device, val_loader):
     sum_loss, sum_correct = 0, 0
     margin = torch.Tensor([]).to(device)
 
@@ -55,7 +62,7 @@ def validate(model, device, val_loader, criterion):
             # compute the classification error and loss
             pred = output.max(1)[1]
             sum_correct += pred.eq(target).sum().item()
-            sum_loss += len(data) * criterion(output, target).item()
+            sum_loss += len(data) * cross_entropy_loss(model, init_model, output, target, FLAGS.init_reg_strength)
 
             # compute the margin
             output_m = output.clone()
@@ -70,7 +77,7 @@ def validate(model, device, val_loader, criterion):
 # Load and Preprocess data.
 # Loading: If the dataset is not in the given directory, it will be downloaded.
 # Preprocessing: This includes normalizing each channel and data augmentation by random cropping and horizontal flipping
-def load_data(split, dataset_name, datadir, nchannels):
+def load_data(split, dataset_name, datadir):
 
     if dataset_name == 'MNIST':
         normalize = transforms.Normalize(mean=[0.131], std=[0.289])
@@ -111,13 +118,12 @@ def train_model(args):
     # create a copy of the initial model to be used later
     init_model = copy.deepcopy(model)
 
-    # define loss function (criterion) and optimizer
-    criterion = nn.CrossEntropyLoss().to(device)
+    # define optimizer
     optimizer = optim.SGD(model.parameters(), args["learningrate"], momentum=args["momentum"], weight_decay=args["weightdecay"])
 
     # loading data
-    train_dataset = load_data('train', args["dataset"], args["datadir"], nchannels)
-    val_dataset = load_data('val', args["dataset"], args["datadir"], nchannels)
+    train_dataset = load_data('train', args["dataset"], args["datadir"])
+    val_dataset = load_data('val', args["dataset"], args["datadir"])
 
     train_loader = DataLoader(train_dataset, batch_size=args["batchsize"], shuffle=True, **kwargs)
     val_loader = DataLoader(val_dataset, batch_size=args["batchsize"], shuffle=False, **kwargs)
@@ -146,9 +152,9 @@ def train_model(args):
     # training the model
     for epoch in range(start_epoch, args["epochs"]):
         # train for one epoch
-        tr_err, tr_loss = train(model, device, train_loader, criterion, optimizer, epoch)
+        tr_err, tr_loss = train(model, init_model, device, train_loader, optimizer)
 
-        val_err, val_loss, val_margin = validate(model, device, val_loader, criterion)
+        val_err, val_loss, val_margin = validate(model, init_model, device, val_loader)
 
         print('Epoch: ' + str(epoch + 1) + "/" + str(args["epochs"]) + '\t Training loss: ' + str(round(tr_loss,3)) + '\t', 'Training error: ' + str(round(tr_err,3)) + '\t Validation error: ' + str(round(val_err,3)))
 
@@ -163,10 +169,11 @@ def train_model(args):
                 }, path + "/checkpoint.pth.tar") 
 
         # stop training if the cross-entropy loss is less than the stopping condition
-        if tr_loss < args["stopcond"]: break
+        if tr_loss < args["stopcond"]:
+            break
 
-    tr_err, tr_loss, tr_margin = validate(model, device, train_loader, criterion)
-    val_err, val_loss, val_margin = validate(model, device, val_loader, criterion)
+    tr_err, tr_loss, tr_margin = validate(model, init_model, device, train_loader)
+    val_err, val_loss, val_margin = validate(model, init_model, device, val_loader)
     print('\nFinal: Training loss: ' + str(round(tr_loss,3)) + '\t Training margin: ' + str(round(tr_margin,3)) + '\t Training error: ' + str(round(tr_err,3)) + '\t Validation error: ' + str(round(val_err,3)) + '\n')
 
     measure = measures.calculate(model, init_model, device, train_loader, tr_margin)
@@ -195,6 +202,8 @@ if __name__ == '__main__':
                         help='momentum (default: 0.9)')
     parser.add_argument('--weightdecay', default=0, type=float,
                         help='weight decay (default: 0)')
+    parser.add_argument('--init_reg_strength', default=0, type=float,
+                        help='initialization regularization strength (default: 0)')
     args, unparsed = parser.parse_known_args()
     train_model(vars(args))
 

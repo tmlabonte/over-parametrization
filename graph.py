@@ -13,10 +13,8 @@ kwargs = {'num_workers': 1, 'pin_memory': True}
 epochs = np.array([i for i in range(50, 550, 50)])
 bounds = [[] for i in range(0, 6)]
 
-criterion = nn.CrossEntropyLoss().to(device)
-
-train_dataset = main.load_data('train', 'CIFAR10', '/hdd/datasets', nchannels)
-val_dataset = main.load_data('val', 'CIFAR10', '/hdd/datasets', nchannels)
+train_dataset = main.load_data('train', 'CIFAR10', '/hdd/datasets')
+val_dataset = main.load_data('val', 'CIFAR10', '/hdd/datasets')
 
 train_loader = DataLoader(train_dataset, batch_size=64, shuffle=True, **kwargs)
 val_loader = DataLoader(val_dataset, batch_size=64, shuffle=False, **kwargs)
@@ -38,8 +36,8 @@ for epoch in epochs:
     optimizer.load_state_dict(checkpoint['optimizer'])
     init_model.load_state_dict(checkpoint['init'])
     
-    tr_err, tr_loss, tr_margin = main.validate(model, device, train_loader, criterion)
-    val_err, val_loss, val_margin = main.validate(model, device, val_loader, criterion)
+    tr_err, tr_loss, tr_margin = main.validate(model, init_model, device, train_loader)
+    val_err, val_loss, val_margin = main.validate(model, init_model, device, val_loader)
     measure = measures.calculate(model, init_model, device, train_loader, tr_margin)
     bound = list(measure.items())[-6:]
     bound = [float(bound[i][1]) for i in range(0, 6)]

@@ -15,10 +15,8 @@ hidden_units = np.array([pow(2, n) for n in range(11, 16)])
 margin = [[] for i in range(0, 4)]
 weight_decay = [0, 0.001, 0.0025, 0.005]
 
-criterion = nn.CrossEntropyLoss().to(device)
-
-train_dataset = main.load_data('train', 'CIFAR10', '/hdd/datasets', nchannels)
-val_dataset = main.load_data('val', 'CIFAR10', '/hdd/datasets', nchannels)
+train_dataset = main.load_data('train', 'CIFAR10', '/hdd/datasets')
+val_dataset = main.load_data('val', 'CIFAR10', '/hdd/datasets')
 
 train_loader = DataLoader(train_dataset, batch_size=64, shuffle=True, **kwargs)
 val_loader = DataLoader(val_dataset, batch_size=64, shuffle=False, **kwargs)
@@ -41,8 +39,8 @@ for i, decay in enumerate(weight_decay):
         optimizer.load_state_dict(checkpoint['optimizer'])
         init_model.load_state_dict(checkpoint['init'])
         
-        tr_err, tr_loss, tr_margin = main.validate(model, device, train_loader, criterion)
-        val_err, val_loss, val_margin = main.validate(model, device, val_loader, criterion)
+        tr_err, tr_loss, tr_margin = main.validate(model, init_model, device, train_loader)
+        val_err, val_loss, val_margin = main.validate(model, init_model, device, val_loader)
         margin[i].append(tr_margin)
 
 plt.plot(hidden_units, np.array(margin[0]), marker="+", label="WD: 0", color="blue")
