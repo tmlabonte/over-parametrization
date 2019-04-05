@@ -12,6 +12,17 @@ import collections
 import math
 from torchvision import transforms, datasets
 
+# define element-wise square loss
+def mean_square_loss(output, target):
+    loss = 0
+    targ_onehot = torch.FloatTensor(10).cuda().zero_()
+
+    for out, targ in zip(output, target):
+        targ_onehot.zero_()
+        targ_onehot[targ.item()] = 1.
+        loss += torch.sum(torch.pow(torch.abs(out - targ_onehot), 2)) / 10.
+    return loss / 64.
+
 # define cross entropy loss with optional weight intialization regularization
 def cross_entropy_loss(model, init_model, output, target, strength):
     criterion = nn.CrossEntropyLoss()
@@ -21,7 +32,7 @@ def cross_entropy_loss(model, init_model, output, target, strength):
     return loss
 
 # train the model for one epoch on the given set
-def train(model, init_model, device, train_loader, optimizer, ir_strength):
+def train(model, init_model, device, train_loader, optimizer, ir_strength, square_loss):
     sum_loss, sum_correct = 0, 0
 
     # switch to train mode
@@ -34,7 +45,11 @@ def train(model, init_model, device, train_loader, optimizer, ir_strength):
         output = model(data)
 
         # compute the classification error and loss
-        loss = cross_entropy_loss(model, init_model, output, target, ir_strength)
+        if square_loss:
+            loss = mean_square_loss(output, target)
+        else:
+            loss = cross_entropy_loss(model, init_model, output, target, ir_strength)
+
         pred = output.max(1)[1]
         sum_correct += pred.eq(target).sum().item()
         sum_loss += len(data) * loss.item()
@@ -47,7 +62,7 @@ def train(model, init_model, device, train_loader, optimizer, ir_strength):
 
 
 # evaluate the model on the given set
-def validate(model, init_model, device, val_loader, ir_strength):
+def validate(model, init_model, device, val_loader, ir_strength, square_loss):
     sum_loss, sum_correct = 0, 0
     margin = torch.Tensor([]).to(device)
 
@@ -61,9 +76,14 @@ def validate(model, init_model, device, val_loader, ir_strength):
             output = model(data)
 
             # compute the classification error and loss
+            if square_loss:
+                loss = mean_square_loss(output, target)
+            else:
+                loss = cross_entropy_loss(model, init_model, output, target, ir_strength)
+
             pred = output.max(1)[1]
             sum_correct += pred.eq(target).sum().item()
-            sum_loss += len(data) * cross_entropy_loss(model, init_model, output, target, ir_strength)
+            sum_loss += len(data) * loss.item()
 
             # compute the margin
             output_m = output.clone()
@@ -113,6 +133,14 @@ def train_model(args):
     if args["dataset"] == 'CIFAR100': nclasses = 100
 
     ir_strength = args["init_reg_strength"]
+    square_loss = args["square_loss"]
+
+    # make hook to store activation values
+    activations = []
+    def get_activation(name):
+        def hook(model, input, output):
+            activations.append(output.detach())
+        return hook
 
     # create an initial model
     model = nn.Sequential(nn.Linear(32 * 32 * nchannels, args["nunits"]), nn.ReLU(), nn.Linear(args["nunits"], nclasses))
@@ -120,6 +148,9 @@ def train_model(args):
 
     # create a copy of the initial model to be used later
     init_model = copy.deepcopy(model)
+
+    # register hook
+    model[1].register_forward_hook(get_activation(model[1]))
 
     # define optimizer
     optimizer = optim.SGD(model.parameters(), args["learningrate"], momentum=args["momentum"], weight_decay=args["weightdecay"])
@@ -133,7 +164,7 @@ def train_model(args):
    
     start_epoch = 0
 
-    path = "saved_models/" + args["dataset"] + "/IR" + str(ir_strength) + "/N" + str(int(math.log(args["nunits"], 2)))
+    path = "saved_models/" + args["dataset"] + "/SQUARE/WD" + str(args["weightdecay"]) + "/N" + str(int(math.log(args["nunits"], 2)))
     if os.path.isdir(path):
         # If exact epochs dir exists, select it
         # Else find latest directory
@@ -155,14 +186,14 @@ def train_model(args):
     # training the model
     for epoch in range(start_epoch, args["epochs"]):
         # train for one epoch
-        tr_err, tr_loss = train(model, init_model, device, train_loader, optimizer, ir_strength)
+        tr_err, tr_loss = train(model, init_model, device, train_loader, optimizer, ir_strength, square_loss)
 
-        val_err, val_loss, val_margin = validate(model, init_model, device, val_loader, ir_strength)
+        val_err, val_loss, val_margin = validate(model, init_model, device, val_loader, ir_strength, square_loss)
 
         print('Epoch: ' + str(epoch + 1) + "/" + str(args["epochs"]) + '\t Training loss: ' + str(round(tr_loss,3)) + '\t', 'Training error: ' + str(round(tr_err,3)) + '\t Validation error: ' + str(round(val_err,3)))
 
         if (epoch + 1) % 50 == 0 and epoch > 0:
-            path = "./saved_models/" + args["dataset"] + "/WD" + str(args["weightdecay"]) + "/N" + str(int(math.log(args["nunits"], 2))) + "/E" + str(epoch + 1)
+            path = "./saved_models/" + args["dataset"] + "/SQUARE/WD" + str(args["weightdecay"]) + "/N" + str(int(math.log(args["nunits"], 2))) + "/E" + str(epoch + 1)
             pathlib.Path(path).mkdir(parents=True, exist_ok=True)
             torch.save({
                 "state_dict": model.state_dict(),
@@ -175,8 +206,8 @@ def train_model(args):
         if tr_loss < args["stopcond"]:
             break
 
-    tr_err, tr_loss, tr_margin = validate(model, init_model, device, train_loader, ir_strength)
-    val_err, val_loss, val_margin = validate(model, init_model, device, val_loader, ir_strength)
+    tr_err, tr_loss, tr_margin = validate(model, init_model, device, train_loader, ir_strength, square_loss)
+    val_err, val_loss, val_margin = validate(model, init_model, device, val_loader, ir_strength, square_loss)
     print('\nFinal: Training loss: ' + str(round(tr_loss,3)) + '\t Training margin: ' + str(round(tr_margin,3)) + '\t Training error: ' + str(round(tr_err,3)) + '\t Validation error: ' + str(round(val_err,3)) + '\n')
 
     measure = measures.calculate(model, init_model, device, train_loader, tr_margin)
@@ -207,6 +238,8 @@ if __name__ == '__main__':
                         help='weight decay (default: 0)')
     parser.add_argument('--init_reg_strength', default=0, type=float,
                         help='initialization regularization strength (default: 0)')
+    parser.add_argument('--square_loss', default=False, type=bool,
+                        help='activates square loss instead of CE (default: False)')
     args, unparsed = parser.parse_known_args()
     train_model(vars(args))
 

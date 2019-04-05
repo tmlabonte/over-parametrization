@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 
 def main(args):
     # Learning rate is 0.01 for MNIST and 0.001 for CIFAR10
-    train_args = {'stopcond': 0, 'dataset': 'CIFAR10', 'learningrate': 0.001, 'nunits': 1024, 'batchsize': 64, 'momentum': 0.9, 'no_cuda': False, 'weightdecay': args["weightdecay"], 'init_reg_strength': args["init_reg_strength"], 'epochs': args["epochs"], 'datadir': '/hdd/datasets'}
+    train_args = {'stopcond': 0, 'dataset': 'CIFAR10', 'learningrate': 0.001, 'nunits': 1024, 'batchsize': 64, 'momentum': 0.9, 'no_cuda': False, 'weightdecay': args["weightdecay"], 'init_reg_strength': args["init_reg_strength"], 'square_loss': args['square_loss'], 'epochs': args["epochs"], 'datadir': '/hdd/datasets'}
 
     # vc, l1max, fro, spec_l1, spec_fro, our 
     bounds_vals = [[], [], [], [], [], []]
@@ -39,7 +39,7 @@ def main(args):
     plt.xscale("log", basex=2)
     plt.yscale("log")
     plt.xticks([pow(2, n) for n in range(6, 16, 3)])
-    plt.title("CIFAR10 - Epochs: " + str(args["epochs"]) + " InitReg: " + str(args["init_reg_strength"]))
+    plt.title("CIFAR10 - Epochs: " + str(args["epochs"]) + " WD: " + str(args["weightdecay"]) + " Loss: MSE")
     plt.legend()
     plt.savefig(args["name"] + ".png")
 
@@ -49,6 +49,8 @@ if __name__ == "__main__":
                         help="weight decay (default: 0)")
     parser.add_argument('--init_reg_strength', default=0, type=float,
                         help='initialization regularization strength (default: 0)')
+    parser.add_argument("--square_loss", default=False, type=bool,
+                        help="activates square loss instead of CE (default: False)")
     parser.add_argument("--epochs", default=500, type=int,
                         help="number of epochs to train (default: 500)")
     parser.add_argument("--name", default="capacity", type=str,
