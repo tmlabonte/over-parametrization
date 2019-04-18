@@ -1,22 +1,29 @@
 from main import train_model
 import argparse
 import numpy as np
+import statistics as s
 import matplotlib.pyplot as plt
 
 def main(args):
     # Learning rate is 0.01 for MNIST and 0.001 for CIFAR10
-    train_args = {'stopcond': 0, 'dataset': 'CIFAR10', 'learningrate': 0.001, 'nunits': 1024, 'batchsize': 64, 'momentum': 0.9, 'no_cuda': False, 'weightdecay': args["weightdecay"], 'init_reg_strength': args["init_reg_strength"], 'square_loss': args['square_loss'], 'epochs': args["epochs"], 'datadir': '/hdd/datasets'}
+    train_args = {'stopcond': 0, 'dataset': 'CIFAR10', 'learningrate': 0.001, 'nunits': 1024, 'batchsize': 64, 'momentum': 0.9, 'no_cuda': False, 'weightdecay': args["weightdecay"], 'init_reg_strength': args["init_reg_strength"], 'square_loss': args['square_loss'], 'epochs': args["epochs"], 'datadir': '/hdd0/datasets'}
 
     # vc, l1max, fro, spec_l1, spec_fro, our 
     bounds_vals = [[], [], [], [], [], []]
+    total_activations = []
     hidden_units = np.array([pow(2, n) for n in range(6, 16)])
 
     for n in range(6, 16):
         train_args["nunits"] = pow(2, n)
 
-        measure = train_model(train_args)
+        measure, activations = train_model(train_args)
         bounds = list(measure.items())[-6:]
         
+        for i, a in enumerate(activations):
+            activations[i] = a.cpu().numpy()
+    
+        total_activations.append([a for a in activations])
+
         with open(args["name"] + ".txt", "a+") as f:
             f.write("Hidden units: 2^" + str(n) + "\n")
             for key, value in measure.items():
@@ -28,6 +35,7 @@ def main(args):
         for i, bound in enumerate(bounds):
             bounds_vals[i].append(float(bound[1]))
 
+    print(avg_zero_activations)
     plt.plot(hidden_units, np.array(bounds_vals[0]), marker="+", label="(1) VC-dim", color="blue")
     plt.plot(hidden_units, np.array(bounds_vals[1]), marker="+", label="(2) l1,max", color="orange")
     plt.plot(hidden_units, np.array(bounds_vals[2]), marker="+", label="(3) Fro", color="green")
@@ -41,7 +49,7 @@ def main(args):
     plt.xticks([pow(2, n) for n in range(6, 16, 3)])
     plt.title("CIFAR10 - Epochs: " + str(args["epochs"]) + " WD: " + str(args["weightdecay"]) + " Loss: MSE")
     plt.legend()
-    plt.savefig(args["name"] + ".png")
+    #plt.savefig(args["name"] + ".png")
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()

@@ -150,7 +150,7 @@ def train_model(args):
     init_model = copy.deepcopy(model)
 
     # register hook
-    model[1].register_forward_hook(get_activation(model[1]))
+    model[0].register_forward_hook(get_activation(model[1]))
 
     # define optimizer
     optimizer = optim.SGD(model.parameters(), args["learningrate"], momentum=args["momentum"], weight_decay=args["weightdecay"])
@@ -211,7 +211,7 @@ def train_model(args):
     print('\nFinal: Training loss: ' + str(round(tr_loss,3)) + '\t Training margin: ' + str(round(tr_margin,3)) + '\t Training error: ' + str(round(tr_err,3)) + '\t Validation error: ' + str(round(val_err,3)) + '\n')
 
     measure = measures.calculate(model, init_model, device, train_loader, tr_margin)
-    return measure
+    return measure, activations
 
 if __name__ == '__main__':
     # settings
